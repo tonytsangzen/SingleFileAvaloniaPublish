@@ -79,7 +79,7 @@ class Program
         }finally
         {
             var assembly = Assembly.GetEntryAssembly();
-            string tempPath = Path.Combine(Path.GetTempPath(), assembly.GetName().Name!);
+            string tempPath = Path.Combine(Path.GetTempPath(), assembly!.GetName().Name!);
             Directory.Delete(tempPath, true);
         }
     }

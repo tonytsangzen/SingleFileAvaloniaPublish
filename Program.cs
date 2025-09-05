@@ -43,7 +43,6 @@ class Program
         var assembly = Assembly.GetExecutingAssembly();
         string tempPath = Path.Combine(Path.GetTempPath(), assembly.GetName().Name!);
         Directory.CreateDirectory(tempPath);
-        Console.WriteLine($"tempPath: {tempPath}");
         var libs = assembly.GetManifestResourceNames();
         foreach (var lib in libs){
             using var stream = assembly.GetManifestResourceStream(lib);

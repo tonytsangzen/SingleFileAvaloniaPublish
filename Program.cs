@@ -19,7 +19,7 @@ class Program
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return "LD_LIBRARY_PATH";
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            return "DYLD_LIBRYRY_PATH";
+            return "DYLD_LIBRARY_PATH";
         else
             return "UNKNOW";
     }

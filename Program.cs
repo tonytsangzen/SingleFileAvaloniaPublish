@@ -6,12 +6,25 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace ava;
 
 class Program
 {
-   public static void Restart()
+    static string GetEnvironmentVariableName()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return "PATH";
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return "LD_LIBRARY_PATH";
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            return "DYLD_LIBRYRY_PATH";
+        else
+            return "UNKNOW";
+    }
+
+    static void Restart()
     {
         string? currentExe = Environment.ProcessPath;
         ProcessStartInfo startInfo = new()
@@ -46,9 +59,10 @@ class Program
             }
         }
 
-        if(Environment.GetEnvironmentVariable("DYLD_LIBRARY_PATH") != tempPath)
+        var env = GetEnvironmentVariableName();
+        if (Environment.GetEnvironmentVariable(env) != tempPath)
         {
-            Environment.SetEnvironmentVariable("DYLD_LIBRARY_PATH", tempPath);
+            Environment.SetEnvironmentVariable(env, tempPath);
             Restart();
         }
     }

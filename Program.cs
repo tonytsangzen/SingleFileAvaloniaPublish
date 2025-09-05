@@ -1,15 +1,17 @@
 ﻿using Avalonia;
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace ava;
 
 class Program
 {
+    static readonly List<string> extraLibs = [];
+
     [ModuleInitializer]
     internal static void Initialize()
     {
@@ -19,11 +21,12 @@ class Program
             using var stream = assembly.GetManifestResourceStream(lib);
             if (stream != null)
             {
-                var local = string.Join('.', lib.Split('.').Skip(3));
-                if(local.Length > 0){
-                    using var file = File.Create(local);
+                var extra = string.Join('.', lib.Split('.').Skip(3));
+                if(extra.Length > 0 && !File.Exists(extra)){
+                    using var file = File.Create(extra);
                     stream!.CopyTo(file);
                     file.Close();
+                    extraLibs.Add(extra);
                 }
             }
         }
@@ -32,10 +35,19 @@ class Program
     [STAThread]
     public static void Main(string[] args)
     {
-        AppBuilder.Configure<App>()
-            .UsePlatformDetect()
-            .LogToTrace()
-            .WithInterFont()
-            .StartWithClassicDesktopLifetime(args);
+        try
+        {
+            AppBuilder.Configure<App>()
+                .UsePlatformDetect()
+                .LogToTrace()
+                .WithInterFont()
+                .StartWithClassicDesktopLifetime(args);
+        }finally
+        {
+            foreach (var lib in extraLibs)
+            {
+                File.Delete(lib);
+            }
+        }
     }
 }

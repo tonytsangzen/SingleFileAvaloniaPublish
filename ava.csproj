@@ -1,0 +1,30 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <PublishAot>true</PublishAot>
+    <IsAotCompatible>true</IsAotCompatible>
+    <StripSymbols>true</StripSymbols>
+    <EnableModuleInitializers>true</EnableModuleInitializers>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.2"/>
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.2"/>
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.2"/>
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.2"/><!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+    <PackageReference Include="Avalonia.Diagnostics" Version="11.3.2">
+      <IncludeAssets Condition="&apos;$(Configuration)&apos; != &apos;Debug&apos;">None</IncludeAssets>
+      <PrivateAssets Condition="&apos;$(Configuration)&apos; != &apos;Debug&apos;">All</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\osx-arm64\*" Condition="&apos;$(RuntimeIdentifier)&apos; == &apos;osx-arm64&apos;"/>
+    <EmbeddedResource Include="Resources\osx-x64\*" Condition="&apos;$(RuntimeIdentifier)&apos; == &apos;osx-x64&apos;"/>
+    <EmbeddedResource Include="Resources\win-x64\*" Condition="&apos;$(RuntimeIdentifier)&apos; == &apos;win-x64&apos;"/>
+    <EmbeddedResource Include="Resources\linux-x64\*" Condition="&apos;$(RuntimeIdentifier)&apos; == &apos;linux-x64&apos;"/>
+  </ItemGroup>
+</Project>

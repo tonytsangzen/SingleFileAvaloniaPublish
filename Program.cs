@@ -24,6 +24,11 @@ class Program
             return "UNKNOW";
     }
 
+    static string GetFileName(string src){
+        var temp = src.Split('.');
+        return string.Join('.', temp.Skip(temp.Length - 2));
+    }
+
     static void Restart()
     {
         string? currentExe = Environment.ProcessPath;
@@ -43,12 +48,12 @@ class Program
         var assembly = Assembly.GetExecutingAssembly();
         string tempPath = Path.Combine(Path.GetTempPath(), assembly.GetName().Name!);
         Directory.CreateDirectory(tempPath);
-        var libs = assembly.GetManifestResourceNames();
-        foreach (var lib in libs){
-            using var stream = assembly.GetManifestResourceStream(lib);
+        var files = assembly.GetManifestResourceNames();
+        foreach (var f in files){
+            using var stream = assembly.GetManifestResourceStream(f);
             if (stream != null)
             {
-                var fn = string.Join('.', lib.Split('.').Skip(3));
+                var fn = GetFileName(f);
                 var extra = Path.Combine(tempPath, fn);
                 if(fn.Length > 0 && !File.Exists(extra)){
                     using var file = File.Create(extra);

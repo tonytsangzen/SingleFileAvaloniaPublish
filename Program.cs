@@ -24,9 +24,46 @@ class Program
             return "UNKNOW";
     }
 
-    static string GetFileName(string src){
-        var temp = src.Split('.');
-        return string.Join('.', temp.Skip(temp.Length - 2));
+    static List<string> GetEmbedLibraries()
+    {
+        var libs = new List<string>();
+        var assembly = Assembly.GetExecutingAssembly();
+        var files = assembly.GetManifestResourceNames();
+        foreach (var f in files)
+        {
+            if (f.EndsWith(".dll") || f.EndsWith(".dylib") || f.EndsWith(".so"))
+            {
+                libs.Add(string.Join('.',f.Split('.')[^2..]));
+            }
+        }
+        return libs;
+    }
+
+    static void ExtraEmbedLibraries()
+    {
+        var assembly = Assembly.GetEntryAssembly();
+        string tempPath = Path.Combine(Path.GetTempPath(), assembly!.GetName().Name!);
+        Directory.CreateDirectory(tempPath);
+        var files = assembly.GetManifestResourceNames();
+        foreach (var f in files)
+        {
+            using var stream = assembly.GetManifestResourceStream(f);
+            if (f.EndsWith(".dll") || f.EndsWith(".dylib") || f.EndsWith(".so"))
+            {
+                var extra = Path.Combine(tempPath, string.Join('.',f.Split('.')[^2..]));
+                if (!File.Exists(extra))
+                {
+                    using var file = File.Create(extra);
+                    stream!.CopyTo(file);
+                    file.Close();
+                }
+            }
+        }
+        var env = GetEnvironmentVariableName();
+        if (Environment.GetEnvironmentVariable(env) != tempPath)
+        {
+            Environment.SetEnvironmentVariable(env, tempPath);
+        }
     }
 
     static void Restart()
@@ -41,33 +78,35 @@ class Program
         Process.Start(startInfo);
         Environment.Exit(0);
     }
-    
+
     [ModuleInitializer]
     internal static void Initialize()
     {
-        var assembly = Assembly.GetExecutingAssembly();
-        string tempPath = Path.Combine(Path.GetTempPath(), assembly.GetName().Name!);
-        Directory.CreateDirectory(tempPath);
-        var files = assembly.GetManifestResourceNames();
-        foreach (var f in files){
-            using var stream = assembly.GetManifestResourceStream(f);
-            if (stream != null)
+        var libs = GetEmbedLibraries();
+        foreach (var lib in libs)
+        {
+            try
             {
-                var fn = GetFileName(f);
-                var extra = Path.Combine(tempPath, fn);
-                if(fn.Length > 0 && !File.Exists(extra)){
-                    using var file = File.Create(extra);
-                    stream!.CopyTo(file);
-                    file.Close();
-                }
+                NativeLibrary.Load(lib);
+            }
+            catch
+            {
+                ExtraEmbedLibraries();
+                Restart();
             }
         }
+    }
 
-        var env = GetEnvironmentVariableName();
-        if (Environment.GetEnvironmentVariable(env) != tempPath)
+    public static void TryDeleteDIrectory(string filePath)
+    {
+        try
         {
-            Environment.SetEnvironmentVariable(env, tempPath);
-            Restart();
+            if (Directory.Exists(filePath))
+            {
+                Directory.Delete(filePath, true);
+            }
+        }catch{
+
         }
     }
 
@@ -81,11 +120,12 @@ class Program
                 .LogToTrace()
                 .WithInterFont()
                 .StartWithClassicDesktopLifetime(args);
-        }finally
+        }
+        finally
         {
             var assembly = Assembly.GetEntryAssembly();
             string tempPath = Path.Combine(Path.GetTempPath(), assembly!.GetName().Name!);
-            Directory.Delete(tempPath, true);
+            TryDeleteDIrectory(tempPath);
         }
     }
 }

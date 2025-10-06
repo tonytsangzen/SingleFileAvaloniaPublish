@@ -43,27 +43,30 @@ class Program
     {
         var assembly = Assembly.GetEntryAssembly();
         string tempPath = Path.Combine(Path.GetTempPath(), assembly!.GetName().Name!);
-        Directory.CreateDirectory(tempPath);
-        var files = assembly.GetManifestResourceNames();
-        foreach (var f in files)
-        {
-            using var stream = assembly.GetManifestResourceStream(f);
-            if (f.EndsWith(".dll") || f.EndsWith(".dylib") || f.EndsWith(".so"))
-            {
-                var extra = Path.Combine(tempPath, string.Join('.',f.Split('.')[^2..]));
-                if (!File.Exists(extra))
-                {
-                    using var file = File.Create(extra);
-                    stream!.CopyTo(file);
-                    file.Close();
-                }
-            }
-        }
-        var env = GetEnvironmentVariableName();
+
+	    var env = GetEnvironmentVariableName();
         if (Environment.GetEnvironmentVariable(env) != tempPath)
         {
+			Directory.CreateDirectory(tempPath);
+
+			var files = assembly.GetManifestResourceNames();
+        	foreach (var f in files)
+        	{
+        	    using var stream = assembly.GetManifestResourceStream(f);
+        	    if (f.EndsWith(".dll") || f.EndsWith(".dylib") || f.EndsWith(".so"))
+        	    {
+        	        var extra = Path.Combine(tempPath, string.Join('.',f.Split('.')[^2..]));
+        	        if (!File.Exists(extra))
+        	        {
+        	            using var file = File.Create(extra);
+        	            stream!.CopyTo(file);
+        	            file.Close();
+        	        }
+        	    }
+        	}
+
             Environment.SetEnvironmentVariable(env, tempPath);
-        }
+		}
     }
 
     static void Restart()
@@ -82,19 +85,15 @@ class Program
     [ModuleInitializer]
     internal static void Initialize()
     {
-        var libs = GetEmbedLibraries();
-        foreach (var lib in libs)
-        {
-            try
-            {
-                NativeLibrary.Load(lib);
-            }
-            catch
-            {
-                ExtraEmbedLibraries();
-                Restart();
-            }
-        }
+		ExtraEmbedLibraries();
+		try{
+        	var libs = GetEmbedLibraries();
+			foreach(var lib in  libs){
+        	    NativeLibrary.Load(lib);
+			}
+		}catch{
+			Restart();
+		}
     }
 
     public static void TryDeleteDIrectory(string filePath)
